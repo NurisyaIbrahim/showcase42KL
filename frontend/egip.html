@@ -233,11 +233,11 @@
   // ========== HOME PAGE ==========
   async function renderHome() {
     const metrics = await callAPI('/dashboard/metrics');
-    const totalFiles = (metrics.governanceDocs || 0) + (metrics.complianceDocs || 0) + (metrics.procurementDocs || 0);
+    const totalFiles = (metrics.documentDocs || 0) + (metrics.complianceDocs || 0) + (metrics.procurementDocs || 0);
     return `
       <div class="row g-4 mb-4">
         <div class="col-md-6 col-lg-3">
-          <div class="premium-card"><div class="card-header-premium">Total Documents</div><div class="display-1 fw-bold text-primary" style="font-size: 3rem;">${totalFiles}</div><div>Total Files Across All Folders</div><div class="mt-3 small text-muted">Documents: ${metrics.governanceDocs || 0} | Compliance: ${metrics.complianceDocs || 0} | Procurement: ${metrics.procurementDocs || 0}</div></div>
+          <div class="premium-card"><div class="card-header-premium">Total Documents</div><div class="display-1 fw-bold text-primary" style="font-size: 3rem;">${totalFiles}</div><div>Total Files Across All Folders</div><div class="mt-3 small text-muted">Documents: ${metrics.documentDocs || 0} | Compliance: ${metrics.complianceDocs || 0} | Procurement: ${metrics.procurementDocs || 0}</div></div>
         </div>
         <div class="col-md-6 col-lg-3">
           <div class="premium-card"><div class="card-header-premium">Compliance Overview</div><div class="d-flex gap-1 flex-wrap"><span class="risk-low">Low ${metrics.lowRisk || 0}</span><span class="risk-medium">Medium ${metrics.mediumRisk || 0}</span><span class="risk-high">High ${metrics.highRisk || 0}</span><span class="risk-critical">Critical ${metrics.criticalRisk || 0}</span></div><div class="mt-3">Score: ${metrics.complianceScore || 0}%<div class="progress mt-1"><div class="progress-bar bg-success" style="width:${metrics.complianceScore || 0}%"></div></div></div></div>
@@ -338,6 +338,43 @@
     `;
   }
 
+  async function deleteDocument(docId) {
+    if (!confirm("Are you sure you want to delete this document?")) return;
+
+    try {
+        const response = await fetch(`/api/documents/${docId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert(`Success: ${result.filename} has been deleted.`);
+        } else {
+            alert(`Error: ${result.error || 'Failed to delete'}`);
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        alert('Could not connect to the server.');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+      // We use a container that already exists on page load
+      // or use document.body to ensure it catches clicks even after re-rendering
+      document.body.addEventListener('click', (e) => {
+          const deleteBtn = e.target.closest('.delete-doc');
+          if (deleteBtn) {
+              const docId = deleteBtn.dataset.id;
+              deleteDocument(docId);
+          }
+      });
+  });
+
+
   async function renderFolderDocumentsTab() {
     await fetchAllDocuments();
     
@@ -348,57 +385,130 @@
       </div>
     `).join('');
     
-    const savedDocsList = backendDocuments.documents.map(doc => {
-      const fileName = doc.filename || doc.name || doc.FileName || 'Unnamed';
-      const category = doc.category || 'general';
-      const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
-      const displayDate = date.slice ? date.slice(0,10) : new Date(date).toISOString().slice(0,10);
-      return `<div class="document-item"><i class="bi bi-cloud-upload me-2"></i><span>${escapeHtml(fileName)}</span><span class="badge bg-secondary">${escapeHtml(category)}</span><small class="text-muted ms-auto">${displayDate}</small></div>`;
-    }).join('');
+    // Mapping saved documents with Edit/Delete buttons
+    let savedDocsList = '';
+    if (backendDocuments.documents && backendDocuments.documents.length > 0) {
+        savedDocsList = backendDocuments.documents.map(doc => {
+            const fileName = doc.filename || doc.name || doc.FileName || 'Unnamed';
+            const category = doc.category || 'general';
+            const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
+            const displayDate = date.slice ? date.slice(0, 10) : new Date(date).toISOString().slice(0, 10);
+
+            return `
+              <div class="document-item d-flex align-items-center p-2 border-bottom">
+                <i class="bi bi-cloud-upload me-2"></i>
+                <span class="flex-grow-1 text-truncate">${escapeHtml(fileName)}</span>
+                <span class="badge bg-secondary ms-2">${escapeHtml(category)}</span>
+                <small class="text-muted ms-auto me-3">${displayDate}</small>
+                
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-danger delete-doc" data-id="${doc.id}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>`;
+        }).join('');
+    } else {
+        savedDocsList = `
+            <div class="text-muted text-center py-5">
+                <i class="bi bi-folder-x fs-2"></i>
+                <p>No documents found.</p>
+            </div>`;
+    }
     
     const savedCount = backendDocuments.documents.length;
     
-    return `<div class="two-col-flex">
-      <div class="col-half">
-        <div class="premium-card">
-          <div class="card-header-premium">Repository (Knowledge Base)</div>
-          <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
-            <div class="dept-grid">${repositoryHtml}</div>
+    return `
+      <div class="two-col-flex">
+        <div class="col-half">
+          <div class="premium-card">
+            <div class="card-header-premium">Repository (Knowledge Base)</div>
+            <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
+              <div class="dept-grid">${repositoryHtml}</div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="col-half">
-        <div class="premium-card">
-          <div class="card-header-premium">Saved Documents (${savedCount})</div>
-          <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
+        <div class="col-half">
+          <div class="premium-card">
+            <div class="card-header-premium">Saved Documents (${savedCount})</div>
+            <div id="savedDocsContainer" class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
             ${savedDocsList || '<div class="text-muted text-center py-4"><i class="bi bi-inbox fs-3"></i><p class="mt-2">No uploaded documents yet.</p></div>'}
+            </div>
           </div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
   }
 
   async function renderFolderComplianceTab() {
     await fetchAllDocuments();
+    const repositoryHtml = Object.values(departmentDocs).map(dept => `
+      <div class="dept-card">
+        <h6>${dept.name}</h6>
+        <ul>${dept.docs.map(doc => `<li><i class="bi bi-file-earmark-text me-1"></i> ${escapeHtml(doc)}</li>`).join('')}</ul>
+      </div>
+    `).join('');
     const savedList = backendDocuments.compliance.map(doc => {
       const fileName = doc.filename || doc.name || doc.FileName || 'Unknown';
       const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
       const displayDate = date.slice ? date.slice(0,10) : new Date(date).toISOString().slice(0,10);
-      return `<div class="document-item"><i class="bi bi-shield-check me-2"></i><span>${escapeHtml(fileName)}</span><small class="text-muted ms-auto">${displayDate}</small></div>`;
+      return `<div class="document-item"><i class="bi bi-shield-check me-2"></i><span>${escapeHtml(fileName)}</span><small class="text-muted ms-auto">${displayDate}</small>
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-danger delete-doc" data-id="${doc.id}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+        </div>`;
     }).join('');
-    return `<div class="premium-card"><div class="card-header-premium">Compliance Saved Documents (${backendDocuments.compliance.length})</div><div class="scrollable-content" style="max-height:550px;overflow-y:auto;">${savedList || '<div class="text-muted text-center py-4">No compliance documents uploaded yet.</div>'}</div></div>`;
-  }
+    return `
+      <div class="two-col-flex">
+        <div class="col-half">
+          <div class="premium-card">
+            <div class="card-header-premium">Repository (Knowledge Base)</div>
+            <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
+              <div class="dept-grid">${repositoryHtml}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-half">
+        <div class="premium-card"><div class="card-header-premium">Compliance Saved Documents (${backendDocuments.compliance.length})</div><div class="scrollable-content" style="max-height:550px;overflow-y:auto;">${savedList || '<div class="text-muted text-center py-4">No compliance documents uploaded yet.</div>'}</div></div>
+        </div>
+      </div>`;
+    }
 
   async function renderFolderProcurementTab() {
     await fetchAllDocuments();
+    const repositoryHtml = Object.values(departmentDocs).map(dept => `
+      <div class="dept-card">
+        <h6>${dept.name}</h6>
+        <ul>${dept.docs.map(doc => `<li><i class="bi bi-file-earmark-text me-1"></i> ${escapeHtml(doc)}</li>`).join('')}</ul>
+      </div>
+    `).join('');
     const savedList = backendDocuments.procurement.map(doc => {
       const fileName = doc.filename || doc.name || doc.FileName || 'Unknown';
       const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
       const displayDate = date.slice ? date.slice(0,10) : new Date(date).toISOString().slice(0,10);
-      return `<div class="document-item"><i class="bi bi-cart-check me-2"></i><span>${escapeHtml(fileName)}</span><small class="text-muted ms-auto">${displayDate}</small></div>`;
+      return `<div class="document-item"><i class="bi bi-cart-check me-2"></i><span>${escapeHtml(fileName)}</span><small class="text-muted ms-auto">${displayDate}</small>
+                  <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-danger delete-doc" data-id="${doc.id}">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div></div>`;
     }).join('');
-    return `<div class="premium-card"><div class="card-header-premium">Procurement Saved Documents (${backendDocuments.procurement.length})</div><div class="scrollable-content" style="max-height:550px;overflow-y:auto;">${savedList || '<div class="text-muted text-center py-4">No procurement documents uploaded yet.</div>'}</div></div>`;
-  }
+    return `
+      <div class="two-col-flex">
+        <div class="col-half">
+          <div class="premium-card">
+            <div class="card-header-premium">Repository (Knowledge Base)</div>
+            <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
+              <div class="dept-grid">${repositoryHtml}</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-half">
+        <div class="premium-card"><div class="card-header-premium">Compliance Saved Documents (${backendDocuments.procurement.length})</div><div class="scrollable-content" style="max-height:550px;overflow-y:auto;">${savedList || '<div class="text-muted text-center py-4">No compliance documents uploaded yet.</div>'}</div></div>
+        </div>
+      </div>`;
+    }
 
   // ========== AI ASSISTANT PAGE with FULL Ollama Integration ==========
   function renderAIAssistant() {

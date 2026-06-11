@@ -218,6 +218,7 @@ def get_dashboard_metrics():
     gov_count = len(docs)
     comp_count = sum(1 for d in docs if d.get('category') == 'compliance')
     proc_count = sum(1 for d in docs if d.get('category') == 'procurement')
+    doc_count = sum(1 for d in docs if d.get('category') == 'document')
     total_count = len(docs)
     
     # ========== DYNAMIC RISK LEVELS from documents ==========
@@ -320,6 +321,7 @@ def get_dashboard_metrics():
         "governanceDocs": gov_count,
         "complianceDocs": comp_count,
         "procurementDocs": proc_count,
+        "documentDocs": doc_count,
         "totalDocs": total_count,
         "lowRisk": low_risk,
         "mediumRisk": medium_risk,
@@ -647,7 +649,7 @@ def search_relevant_documents(query, role='admin', limit=5):
                 'id': doc['id'],
                 'filename': doc['filename'],
                 'category': doc['category'],
-                'content': doc.get('content', '')[:2000],
+                'content': doc.get('content', '')[:10000],
                 'relevance': min(98, score)
             })
     
