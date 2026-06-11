@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>EGIP | Enterprise Governance Intelligence Platform</title>
+  <!-- Bootstrap 5 + Icons + Fonts + Chart.js -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #F5F7FB; overflow-x: hidden; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
+    :root {
+      --bg-premium: #F5F7FB;
+      --card-white: #FFFFFF;
+      --text-primary: #1A1F36;
+      --text-secondary: #5B6B79;
+      --border-light: #E8ECF2;
+      --accent-blue: #3B82F6;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+      --shadow-lg: 0 20px 35px -12px rgba(0, 0, 0, 0.08);
+    }
+    .floating-sidebar { position: fixed; left: 24px; top: 50%; transform: translateY(-50%); width: 100px; background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px); border-radius: 44px; padding: 20px 0; box-shadow: var(--shadow-lg); border: 1px solid rgba(255, 255, 255, 0.5); z-index: 1000; transition: all 0.3s ease; }
+    .sidebar-logo { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-light); }
+    .sidebar-logo h3 { font-size: 1.2rem; font-weight: 800; background: linear-gradient(135deg, #1A1F36 0%, #3B82F6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0; }
+    .sidebar-item { display: flex; flex-direction: column; align-items: center; padding: 12px 0; margin: 4px 12px; border-radius: 28px; cursor: pointer; transition: all 0.2s ease; color: #8E9AAB; }
+    .sidebar-item i { font-size: 22px; margin-bottom: 6px; }
+    .sidebar-item span { font-size: 10px; font-weight: 500; }
+    .sidebar-item:hover, .sidebar-item.active { background: var(--accent-blue); color: white; transform: scale(1.02); }
+    .main-content { margin-left: 150px; padding: 32px 40px; max-width: calc(100% - 150px); }
+    .premium-header { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 32px; }
+    .header-actions { display: flex; gap: 16px; align-items: center; }
+    .avatar-btn { width: 44px; height: 44px; background: white; border-radius: 22px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-sm); transition: all 0.2s; }
+    .avatar-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-md); }
+    .premium-card { background: var(--card-white); border-radius: 28px; padding: 24px; box-shadow: var(--shadow-sm); transition: all 0.25s ease; border: 1px solid var(--border-light); height: 100%; display: flex; flex-direction: column; }
+    .premium-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .card-header-premium { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 600; color: var(--text-primary); font-size: 1.1rem; }
+    .upload-zone { border: 2px dashed var(--border-light); border-radius: 20px; padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #FAFCFE; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .upload-zone:hover { border-color: var(--accent-blue); background: #EFF6FF; }
+    .dept-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; max-height: 500px; overflow-y: auto; padding-right: 8px; margin-bottom: 24px; }
+    .dept-card { background: #F8FAFC; border-radius: 16px; padding: 14px; border-left: 3px solid var(--accent-blue); }
+    .dept-card h6 { font-size: 0.85rem; font-weight: 700; margin-bottom: 10px; }
+    .dept-card ul { padding-left: 18px; margin-bottom: 0; }
+    .dept-card li { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 4px; }
+    .document-item { background: #F8FAFC; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.8rem; border-left: 3px solid var(--accent-blue); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .document-item .badge { font-size: 0.65rem; padding: 3px 8px; }
+    .upload-status { margin-top: 10px; font-size: 0.75rem; }
+    .custom-tabs { display: flex; gap: 8px; background: white; padding: 6px; border-radius: 60px; width: fit-content; margin-bottom: 28px; box-shadow: var(--shadow-sm); }
+    .tab-btn { padding: 10px 28px; border-radius: 40px; border: none; background: transparent; font-weight: 500; transition: all 0.2s; color: var(--text-secondary); }
+    .tab-btn.active { background: var(--accent-blue); color: white; }
+    .scrollable-content { flex: 1; overflow-y: auto; }
+    .section-divider { margin: 16px 0 12px 0; font-weight: 600; color: var(--text-primary); border-bottom: 1px solid var(--border-light); padding-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .two-col-flex { display: flex; gap: 24px; }
+    .col-half { flex: 1; }
+    .ai-columns { display: flex; flex-direction: column; gap: 24px; }
+    .ai-panel { background: white; border-radius: 24px; padding: 24px; border: 1px solid var(--border-light); min-height: 260px; }
+    .data-table { width: 100%; }
+    .data-table th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); padding: 10px 6px; }
+    .data-table td { padding: 10px 6px; border-bottom: 1px solid var(--border-light); font-size: 0.75rem; }
+    .risk-low, .risk-medium, .risk-high, .risk-critical { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .risk-low { background: #ECFDF5; color: #059669; }
+    .risk-medium { background: #FFFBEB; color: #D97706; }
+    .risk-high { background: #FEF2F2; color: #DC2626; }
+    .risk-critical { background: #FEF2F2; color: #991B1B; }
+    
+    /* AI Assistant Styles */
+    .structured-message {
+      background: #F1F5F9;
+      border-radius: 20px;
+      border-bottom-left-radius: 6px;
+      padding: 16px 20px;
+      max-width: 85%;
+    }
+    .structured-section {
+      margin-bottom: 14px;
+    }
+    .structured-section strong {
+      color: var(--accent-blue);
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+    }
+    .structured-section p {
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-primary);
+    }
+    .risk-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .risk-badge.low { background: #ECFDF5; color: #059669; }
+    .risk-badge.medium { background: #FFFBEB; color: #D97706; }
+    .risk-badge.high { background: #FEF2F2; color: #DC2626; }
+    .risk-badge.critical { background: #FEF2F2; color: #991B1B; }
+    .chat-sources {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-light);
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+    .source-item {
+      background: #F8FAFC;
+      border-radius: 16px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--accent-blue);
+      font-size: 0.8rem;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) { .floating-sidebar { left: 12px; width: 80px; } .sidebar-item span { display: none; } .main-content { margin-left: 110px; padding: 20px; max-width: calc(100% - 110px); } .two-col-flex { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<div class="floating-sidebar">
+  <div class="sidebar-logo"><h3>EGIP</h3></div>
+  <div class="sidebar-item active" data-page="home"><i class="bi bi-house-door-fill"></i><span>Home</span></div>
+  <div class="sidebar-item" data-page="folder"><i class="bi bi-folder2"></i><span>Folder</span></div>
+  <div class="sidebar-item" data-page="ai-assistant"><i class="bi bi-cpu"></i><span>AI Studio</span></div>
+  <div class="sidebar-item" data-page="admin"><i class="bi bi-gear"></i><span>Settings</span></div>
+</div>
+
+<main class="main-content" id="mainContent">
+  <div class="premium-header">
+    <div></div>
+    <div class="header-actions">
+      <div class="avatar-btn"><i class="bi bi-bell"></i></div>
+      <div class="avatar-btn"><i class="bi bi-person-circle"></i></div>
+    </div>
+  </div>
+  <div id="dynamicPage"></div>
+</main>
+
+<script>
+  // API Configuration
+  const API_BASE_URL = 'http://localhost:5001/api';
+  
+  // Hardcoded Repository (Department Knowledge Base)
+  const departmentDocs = {
+    legal: { name: "Legal & Compliance", docs: ["Articles of Incorporation", "Corporate Bylaws", "Data Privacy Policies (GDPR/PDPR)", "Intellectual Property (IP) Policies", "Regulatory Compliance Registers"] },
+    finance: { name: "Finance & Treasury", docs: ["Delegation of Authority (DoA) Matrix", "Anti-Money Laundering (AML) Policy", "Procurement and Purchasing Policies", "Internal Audit Frameworks", "Expense Reimbursement Rules"] },
+    hr: { name: "Human Resources (HR)", docs: ["Employee Handbook", "Code of Conduct and Ethics", "Whistleblower Protection Policy", "Diversity, Equity, and Inclusion (DEI) Policy", "Disciplinary and Grievance Procedures"] },
+    it: { name: "Information Technology (IT) & Security", docs: ["Information Security Policy (InfoSec)", "Acceptable Use Policy", "Disaster Recovery & Business Continuity Plans", "Access Control & Password Policies", "AI and Software Usage Guidelines"] },
+    operations: { name: "Operations & Risk Management", docs: ["Standard Operating Procedures (SOPs)", "Corporate Risk Register", "Health, Safety, and Environment (HSE) Manual", "Vendor & Third-Party Management Policies", "Crisis Management Protocols"] },
+    marketing: { name: "Marketing & Communications", docs: ["Social Media Policy", "Public Relations (PR) & Crisis Communication Guide", "Brand Guidelines & Trademark Usage", "Insider Trading / Market Disclosure Rules"] }
+  };
+
+  // Backend storage for user uploaded files
+  let backendDocuments = {
+    documents: [],
+    compliance: [],
+    procurement: []
+  };
+  
+  let auditLogs = [];
+  let users = [
+    { id: 1, name: "admin@egip.com", role: "Admin" },
+    { id: 2, name: "compliance@egip.com", role: "Compliance Officer" },
+    { id: 3, name: "procurement@egip.com", role: "Procurement Lead" }
+  ];
+  
+  let homeRefreshInterval = null;
+  let currentHomeChart = null;
+  let currentPage = "home";
+
+  function formatDateDDMMYYYY(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB');
+  }
+
+  function addAuditLog(user, action, module, details) {
+    const newLog = { user, action, module, details, timestamp: new Date().toISOString() };
+    auditLogs.unshift(newLog);
+    if (auditLogs.length > 100) auditLogs.pop();
+    callAPI('/audit/log', 'POST', { user, action, module, details }).catch(e => console.warn);
+  }
+
+  async function callAPI(endpoint, method = 'GET', body = null) {
+    try {
+      const options = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) options.body = JSON.stringify(body);
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return await response.json();
+    } catch (error) {
+      console.warn('API call failed:', error);
+      return { error: error.message, offline: true };
+    }
+  }
+
+  async function fetchAllDocuments() {
+    const result = await callAPI('/documents');
+    if (!result.error) {
+      let docs = [];
+      if (result.documents) docs = result.documents;
+      else if (result.data) docs = result.data;
+      else if (Array.isArray(result)) docs = result;
+      
+      backendDocuments = {
+        documents: docs.filter(doc => {
+          const cat = (doc.category || '').toLowerCase();
+          return cat === 'general' || cat === 'document' || cat === 'governance' || cat === '';
+        }),
+        compliance: docs.filter(doc => (doc.category || '').toLowerCase() === 'compliance'),
+        procurement: docs.filter(doc => (doc.category || '').toLowerCase() === 'procurement')
+      };
+    }
+    return backendDocuments;
+  }
+
+  // ========== HOME PAGE ==========
+  async function renderHome() {
+    const metrics = await callAPI('/dashboard/metrics');
+    const totalFiles = (metrics.governanceDocs || 0) + (metrics.complianceDocs || 0) + (metrics.procurementDocs || 0);
+    return `
+      <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="premium-card"><div class="card-header-premium">Total Documents</div><div class="display-1 fw-bold text-primary" style="font-size: 3rem;">${totalFiles}</div><div>Total Files Across All Folders</div><div class="mt-3 small text-muted">Documents: ${metrics.governanceDocs || 0} | Compliance: ${metrics.complianceDocs || 0} | Procurement: ${metrics.procurementDocs || 0}</div></div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="premium-card"><div class="card-header-premium">Compliance Overview</div><div class="d-flex gap-1 flex-wrap"><span class="risk-low">Low ${metrics.lowRisk || 0}</span><span class="risk-medium">Medium ${metrics.mediumRisk || 0}</span><span class="risk-high">High ${metrics.highRisk || 0}</span><span class="risk-critical">Critical ${metrics.criticalRisk || 0}</span></div><div class="mt-3">Score: ${metrics.complianceScore || 0}%<div class="progress mt-1"><div class="progress-bar bg-success" style="width:${metrics.complianceScore || 0}%"></div></div></div></div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="premium-card"><div class="card-header-premium">Procurement Overview</div><div><strong>Active Projects:</strong> ${metrics.activeProjects || 0}</div><div><strong>Suppliers Review:</strong> ${metrics.suppliersReview || 0}</div><div class="mt-3 bg-light rounded-3 p-2"><strong>Recommended:</strong> ${metrics.recommendedSupplier || 'None'} (${metrics.confidence || 0}%)</div></div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="premium-card"><div class="card-header-premium">AI Analytics</div><div class="display-4 fw-bold">${metrics.aiQueriesToday || 0}</div><div>Queries Today</div><div>Confidence: ${metrics.avgConfidence || 0}% | Response: ${metrics.avgResponseTime || 0}s</div></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <div class="premium-card">
+            <div class="card-header-premium">Upload Documents</div>
+            <div class="row g-4">
+              <div class="col-md-4">
+                <div class="upload-zone" id="uploadZoneDocuments">
+                  <i class="bi bi-cloud-upload fs-1"></i>
+                  <p class="mt-2">Documents (Governance)</p>
+                  <small>PDF, DOCX, TXT</small>
+                  <input type="file" id="fileInputDocuments" style="display:none" accept=".pdf,.docx,.txt">
+                </div>
+                <div id="uploadStatusDocuments" class="upload-status text-success mt-2"></div>
+              </div>
+              <div class="col-md-4">
+                <div class="upload-zone" id="uploadZoneCompliance">
+                  <i class="bi bi-cloud-upload fs-1"></i>
+                  <p class="mt-2">Compliance Documents</p>
+                  <small>Policies, risk assessments</small>
+                  <input type="file" id="fileInputCompliance" style="display:none" accept=".pdf,.docx,.txt">
+                </div>
+                <div id="uploadStatusCompliance" class="upload-status text-success mt-2"></div>
+              </div>
+              <div class="col-md-4">
+                <div class="upload-zone" id="uploadZoneProcurement">
+                  <i class="bi bi-cloud-upload fs-1"></i>
+                  <p class="mt-2">Procurement Documents</p>
+                  <small>RFPs, contracts, evaluations</small>
+                  <input type="file" id="fileInputProcurement" style="display:none" accept=".pdf,.docx,.txt">
+                </div>
+                <div id="uploadStatusProcurement" class="upload-status text-success mt-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 mt-4">
+          <div class="premium-card">
+            <div class="card-header-premium">AI Query Trends</div>
+            <canvas id="homeChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function initHomeChart() {
+    const canvas = document.getElementById("homeChart");
+    if (!canvas) return;
+    if (currentHomeChart) currentHomeChart.destroy();
+    currentHomeChart = new Chart(canvas, {
+      type: 'line',
+      data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'AI Queries', data: [18, 24, 32, 41, 57, 62, 49], borderColor: '#3B82F6', tension: 0.3, fill: true, backgroundColor: 'rgba(59,130,246,0.05)' }] }
+    });
+  }
+
+  function attachHomeUploadEvents() {
+    const zones = [
+      { zoneId: "uploadZoneDocuments", inputId: "fileInputDocuments", category: "document", statusId: "uploadStatusDocuments" },
+      { zoneId: "uploadZoneCompliance", inputId: "fileInputCompliance", category: "compliance", statusId: "uploadStatusCompliance" },
+      { zoneId: "uploadZoneProcurement", inputId: "fileInputProcurement", category: "procurement", statusId: "uploadStatusProcurement" }
+    ];
+    zones.forEach(z => {
+      const zone = document.getElementById(z.zoneId);
+      if(zone){
+        zone.onclick = () => document.getElementById(z.inputId)?.click();
+        const input = document.getElementById(z.inputId);
+        if(input) input.onchange = async (e) => { if(e.target.files[0]){ await uploadFile(e.target.files[0], z.category, z.statusId); input.value = ''; } };
+      }
+    });
+  }
+
+  // ========== FOLDER PAGE ==========
+  async function renderFolder() {
+    await fetchAllDocuments();
+    const totalDocs = backendDocuments.documents.length;
+    const totalComp = backendDocuments.compliance.length;
+    const totalProc = backendDocuments.procurement.length;
+    return `
+      <div class="custom-tabs">
+        <button class="tab-btn active" data-tab="documents">Documents (${totalDocs})</button>
+        <button class="tab-btn" data-tab="compliance">Compliance (${totalComp})</button>
+        <button class="tab-btn" data-tab="procurement">Procurement (${totalProc})</button>
+      </div>
+      <div id="folderTabContent">
+        ${await renderFolderDocumentsTab()}
+      </div>
+    `;
+  }
+
+  async function renderFolderDocumentsTab() {
+    await fetchAllDocuments();
+    
+    const repositoryHtml = Object.values(departmentDocs).map(dept => `
+      <div class="dept-card">
+        <h6>${dept.name}</h6>
+        <ul>${dept.docs.map(doc => `<li><i class="bi bi-file-earmark-text me-1"></i> ${escapeHtml(doc)}</li>`).join('')}</ul>
+      </div>
+    `).join('');
+    
+    const savedDocsList = backendDocuments.documents.map(doc => {
+      const fileName = doc.filename || doc.name || doc.FileName || 'Unnamed';
+      const category = doc.category || 'general';
+      const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
+      const displayDate = date.slice ? date.slice(0,10) : new Date(date).toISOString().slice(0,10);
+      return `<div class="document-item"><i class="bi bi-cloud-upload me-2"></i><span>${escapeHtml(fileName)}</span><span class="badge bg-secondary">${escapeHtml(category)}</span><small class="text-muted ms-auto">${displayDate}</small></div>`;
+    }).join('');
+    
+    const savedCount = backendDocuments.documents.length;
+    
+    return `<div class="two-col-flex">
+      <div class="col-half">
+        <div class="premium-card">
+          <div class="card-header-premium">Repository (Knowledge Base)</div>
+          <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
+            <div class="dept-grid">${repositoryHtml}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-half">
+        <div class="premium-card">
+          <div class="card-header-premium">Saved Documents (${savedCount})</div>
+          <div class="scrollable-content" style="max-height: 550px; overflow-y: auto;">
+            ${savedDocsList || '<div class="text-muted text-center py-4"><i class="bi bi-inbox fs-3"></i><p class="mt-2">No uploaded documents yet.</p></div>'}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  async function renderFolderComplianceTab() {
+    await fetchAllDocuments();
+    const savedList = backendDocuments.compliance.map(doc => {
+      const fileName = doc.filename || doc.name || doc.FileName || 'Unknown';
+      const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
+      const displayDate = date.slice ? date.slice(0,10) : new Date(date).toISOString().slice(0,10);
+      return `<div class="document-item"><i class="bi bi-shield-check me-2"></i><span>${escapeHtml(fileName)}</span><small class="text-muted ms-auto">${displayDate}</small></div>`;
+    }).join('');
+    return `<div class="premium-card"><div class="card-header-premium">Compliance Saved Documents (${backendDocuments.compliance.length})</div><div class="scrollable-content" style="max-height:550px;overflow-y:auto;">${savedList || '<div class="text-muted text-center py-4">No compliance documents uploaded yet.</div>'}</div></div>`;
+  }
+
+  async function renderFolderProcurementTab() {
+    await fetchAllDocuments();
+    const savedList = backendDocuments.procurement.map(doc => {
+      const fileName = doc.filename || doc.name || doc.FileName || 'Unknown';
+      const date = doc.updated_at || doc.UploadedDate || doc.created_at || new Date().toISOString();
+      const displayDate = date.slice ? date.slice(0,10) : new Date(date).toISOString().slice(0,10);
+      return `<div class="document-item"><i class="bi bi-cart-check me-2"></i><span>${escapeHtml(fileName)}</span><small class="text-muted ms-auto">${displayDate}</small></div>`;
+    }).join('');
+    return `<div class="premium-card"><div class="card-header-premium">Procurement Saved Documents (${backendDocuments.procurement.length})</div><div class="scrollable-content" style="max-height:550px;overflow-y:auto;">${savedList || '<div class="text-muted text-center py-4">No procurement documents uploaded yet.</div>'}</div></div>`;
+  }
+
+  // ========== AI ASSISTANT PAGE with FULL Ollama Integration ==========
+  function renderAIAssistant() {
+    return `<div class="premium-card mb-4" style="padding:0; border:none; background:transparent; min-height:auto;"><div class="row g-4"><div class="col-lg-7"><div class="chat-container" style="background:white;border-radius:24px;border:1px solid var(--border-light);height:600px;display:flex;flex-direction:column;"><div class="chat-header p-3 border-bottom"><h6 class="mb-0"><i class="bi bi-robot me-2"></i>EGIP AI Assistant</h6></div><div class="chat-messages" id="chatMessages" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;"><div class="text-secondary text-center mt-4">Ask a question to start the conversation...</div></div><div class="chat-input-area p-3 border-top"><div class="input-group"><input type="text" id="aiQuestion" class="form-control" placeholder="Ask about governance, compliance, procurement, risk..."><button class="btn btn-primary" id="askBtn"><i class="bi bi-send"></i> Analyze</button></div></div></div></div><div class="col-lg-5"><div class="right-panel" style="background:white;border-radius:24px;border:1px solid var(--border-light);padding:20px;height:600px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;"><div class="info-card" style="background:#F8FAFC;border-radius:20px;padding:16px;"><h6 class="mb-3"><i class="bi bi-bar-chart"></i> Decision Summary</h6><div id="decisionSummary"><div class="text-secondary">AI response will appear here...</div></div></div><div class="info-card" style="background:#F8FAFC;border-radius:20px;padding:16px;"><h6 class="mb-3"><i class="bi bi-folder2-open"></i> Sources Retrieved</h6><div id="sourcesList"><div class="text-secondary">Ask a question to see relevant sources...</div></div></div><div class="info-card"><h6 class="mb-3">Suggested Questions</h6><div class="d-flex flex-wrap gap-2"><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="Who can approve a RM50,000 project?">RM50k approver?</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="What is the Delegation of Authority limit?">DoA limit</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="What are the ESG targets for 2026?">ESG 2026</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="How often should risk assessments be conducted?">Risk assessment frequency</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="Who do I report a compliance violation to?">Report violation</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="What happens if a supplier fails ISO certification?">Supplier ISO failure</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="What are our 2026 ESG reduction targets?">2026 ESG targets</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="What is the code of conduct for managers?">Manager code of conduct</button><button class="btn suggest-btn suggest" style="font-size:0.7rem;padding:6px 12px;border-radius:20px;background:white;border:1px solid var(--border-light);" data-q="Who has access to sensitive customer data?">Customer data access</button></div></div></div></div></div></div>`;
+  }
+
+  // ========== ADMIN PAGE ==========
+  function renderAdmin() {
+    return `
+      <div class="ai-columns">
+        <div class="ai-panel">
+          <h5><i class="bi bi-people me-2"></i>User Management</h5>
+          <button class="btn btn-primary btn-sm mb-3" id="addUserBtn">+ Add User</button>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>User</th><th>Role</th><th>Action</th></tr></thead>
+              <tbody id="userTableBody">${users.map(u => `<tr><td>${escapeHtml(u.name)}</td><td>${escapeHtml(u.role)}</td><td><button class="btn btn-sm btn-outline-danger delete-user" data-id="${u.id}">Delete</button></td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ai-panel">
+          <h5><i class="bi bi-journal-text me-2"></i>User Actions & Timestamp</h5>
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead><tr><th>User</th><th>Action</th><th>Module</th><th>Timestamp (DD/MM/YYYY)</th></tr></thead>
+              <tbody>${auditLogs.slice(0, 10).map(log => `<tr><td>${escapeHtml(log.user)}</td><td>${escapeHtml(log.action)}</td><td>${escapeHtml(log.module || '-')}</td><td>${formatDateDDMMYYYY(log.timestamp)}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ai-panel">
+          <h5><i class="bi bi-database me-2"></i>Knowledge Management</h5>
+          <div><strong>Total Documents:</strong> <span id="totalDocsDisplay">${backendDocuments.documents.length + backendDocuments.compliance.length + backendDocuments.procurement.length}</span></div>
+          <div><strong>Last Upload:</strong> ${new Date().toLocaleDateString('en-GB')}</div>
+        </div>
+        <div class="ai-panel">
+          <h5><i class="bi bi-gear me-2"></i>System Configuration</h5>
+          <div><strong>AI Model:</strong> Ollama (Gemma2/Llama2)</div>
+          <div><strong>Backend:</strong> ${API_BASE_URL}</div>
+          <div><strong>Database:</strong> SQLite Connected</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+  // ========== UPLOAD FUNCTION ==========
+  async function uploadFile(file, category, statusElementId) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('category', category);
+    try {
+      const response = await fetch(`${API_BASE_URL}/documents/upload`, { method: 'POST', body: formData });
+      const text = await response.text();
+      let result;
+      try { result = JSON.parse(text); } catch(e) { throw new Error('Invalid server response'); }
+      if (response.ok && (result.success || result.message)) {
+        document.getElementById(statusElementId).innerHTML = `<i class="bi bi-check-circle text-success"></i> Uploaded: ${file.name}`;
+        setTimeout(() => { if(document.getElementById(statusElementId)) document.getElementById(statusElementId).innerHTML = ""; }, 3000);
+        addAuditLog("user@egip.com", `Uploaded: ${file.name}`, category, "");
+        await fetchAllDocuments();
+        if (currentPage === "folder") {
+          const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'documents';
+          await refreshFolderTabContent(activeTab);
+        }
+        if (currentPage === "admin") {
+          const totalSpan = document.getElementById("totalDocsDisplay");
+          if(totalSpan) totalSpan.innerText = backendDocuments.documents.length + backendDocuments.compliance.length + backendDocuments.procurement.length;
+        }
+        return true;
+      } else throw new Error(result.error || 'Upload failed');
+    } catch (error) {
+      document.getElementById(statusElementId).innerHTML = `<i class="bi bi-exclamation-circle text-danger"></i> Failed: ${error.message}`;
+      return false;
+    }
+  }
+
+  async function refreshFolderTabContent(tab) {
+    const container = document.getElementById("folderTabContent");
+    if (!container) return;
+    if (tab === "documents") container.innerHTML = await renderFolderDocumentsTab();
+    else if (tab === "compliance") container.innerHTML = await renderFolderComplianceTab();
+    else if (tab === "procurement") container.innerHTML = await renderFolderProcurementTab();
+    attachFolderTabEvents();
+  }
+
+  function attachFolderTabEvents() {
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.removeEventListener('click', window.folderTabHandler);
+      const handler = async (e) => {
+        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+        const container = document.getElementById("folderTabContent");
+        if(!container) return;
+        if(tab === "documents") container.innerHTML = await renderFolderDocumentsTab();
+        else if(tab === "compliance") container.innerHTML = await renderFolderComplianceTab();
+        else if(tab === "procurement") container.innerHTML = await renderFolderProcurementTab();
+        attachFolderTabEvents();
+      };
+      btn.addEventListener('click', handler);
+      window.folderTabHandler = handler;
+    });
+  }
+
+  // ========== AI ASSISTANT SETUP - FULL OLLAMA INTEGRATION, NO HARDCODED ==========
+  function setupAIAssistant() {
+    let chatHistory = [];
+    
+    function getRiskBadgeClass(riskLevel) {
+      const level = (riskLevel || 'Low').toLowerCase();
+      if (level === 'critical') return 'critical';
+      if (level === 'high') return 'high';
+      if (level === 'medium') return 'medium';
+      return 'low';
+    }
+    
+    function formatStructuredBotResponse(response) {
+      const keyFindings = response.key_findings || response.answer?.substring(0, 300) || 'Processing complete';
+      const reasoning = response.reasoning || 'Analysis based on available documents';
+      const riskLevel = response.risk_level || 'Unknown';
+      const recommendation = response.recommendation || response.answer?.substring(0, 200) || 'Refer to documents for details';
+      const confidence = (response.confidence !== undefined && response.confidence !== null) ? response.confidence : 0;
+      const sources = response.sources || [];
+      const riskBadgeClass = getRiskBadgeClass(riskLevel);
+      
+      return `
+        <div class="structured-message">
+          <div class="structured-section">
+            <strong>Key Findings:</strong>
+            <p>${escapeHtml(keyFindings)}</p>
+          </div>
+          <div class="structured-section">
+            <strong>Reasoning:</strong>
+            <p>${escapeHtml(reasoning)}</p>
+          </div>
+          <div class="structured-section">
+            <strong>Risk Assessment:</strong>
+            <p><span class="risk-badge ${riskBadgeClass}">${escapeHtml(riskLevel)}</span></p>
+          </div>
+          <div class="structured-section">
+            <strong>Recommendation:</strong>
+            <p>${escapeHtml(recommendation)}</p>
+          </div>
+          <div class="structured-section">
+            <strong>Confidence Score:</strong>
+            <div class="progress mt-1" style="height:6px;">
+              <div class="progress-bar bg-success" style="width: ${confidence}%"></div>
+            </div>
+            <small class="text-muted">${confidence}%</small>
+          </div>
+          ${sources.length > 0 ? `
+            <div class="chat-sources">
+              <strong>Sources:</strong> ${sources.map(s => escapeHtml(typeof s === 'string' ? s : s.title)).join(', ')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+    
+    function renderMessages() {
+      const container = document.getElementById('chatMessages');
+      if (!container) return;
+      
+      if (chatHistory.length === 0) {
+        container.innerHTML = '<div class="text-secondary text-center mt-4">Ask a question to start the conversation...</div>';
+        return;
+      }
+      
+      const messagesHtml = chatHistory.map(msg => {
+        if (msg.role === 'user') {
+          return `
+            <div style="display:flex; justify-content:flex-end;">
+              <div style="background:var(--accent-blue); color:white; padding:12px 18px; border-radius:22px; border-bottom-right-radius:6px; max-width:85%; word-wrap:break-word;">
+                ${escapeHtml(msg.content)}
+              </div>
+            </div>
+          `;
+        } else {
+          return `<div style="display:flex; justify-content:flex-start;">${msg.content}</div>`;
+        }
+      }).join('');
+      
+      container.innerHTML = messagesHtml;
+      container.scrollTop = container.scrollHeight;
+    }
+    
+    async function handleAsk() {
+      const questionInput = document.getElementById('aiQuestion');
+      const question = questionInput?.value.trim();
+      if (!question) return;
+      if (questionInput) questionInput.value = '';
+      
+      chatHistory.push({ role: 'user', content: question });
+      renderMessages();
+      
+      document.getElementById('decisionSummary').innerHTML = '<div class="loading"></div> Analyzing with Ollama...';
+      document.getElementById('sourcesList').innerHTML = '<div class="loading"></div> Retrieving relevant documents...';
+      
+      try {
+        const response = await fetch('http://localhost:5001/api/ai/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: question, role: 'admin' })
+        });
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        
+        const result = await response.json();
+        
+        if (result.sources && result.sources.length > 0) {
+          document.getElementById('sourcesList').innerHTML = result.sources.map(s => `
+            <div class="source-item">
+              <i class="bi bi-file-text me-2"></i>
+              <strong>${escapeHtml(s.title || 'Document')}</strong>
+              <span class="badge bg-primary float-end">${s.relevance || 0}% relevance</span>
+            </div>
+          `).join('');
+        } else {
+          document.getElementById('sourcesList').innerHTML = '<div class="text-secondary">No specific documents found for this query</div>';
+        }
+        
+        document.getElementById('decisionSummary').innerHTML = `
+          <div class="mb-2">
+            <strong>Confidence Score:</strong>
+            <div class="progress mt-1" style="height:8px;">
+              <div class="progress-bar bg-success" style="width: ${result.confidence || 0}%"></div>
+            </div>
+            <span class="small">${result.confidence || 0}%</span>
+          </div>
+          <div class="mb-2">
+            <strong>Risk Level:</strong> 
+            <span class="risk-badge ${getRiskBadgeClass(result.risk_level)}">${escapeHtml(result.risk_level || 'Unknown')}</span>
+          </div>
+          <div class="mb-2">
+            <strong>Recommendation:</strong><br>
+            <small>${escapeHtml(result.recommendation || 'No recommendation available')}</small>
+          </div>
+          <div class="mb-2">
+            <strong>Response Time:</strong> ${result.response_time || '0'}s
+          </div>
+          <div>
+            <strong>Sources Analyzed:</strong> ${result.sources?.length || 0}
+          </div>
+        `;
+        
+        const formattedResponse = formatStructuredBotResponse(result);
+        chatHistory.push({ role: 'bot', content: formattedResponse });
+        renderMessages();
+        
+        try {
+          await fetch('http://localhost:5001/api/audit/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user: 'user@egip.com',
+              action: `AI Query: ${question.substring(0, 50)}`,
+              module: 'AI Studio',
+              details: `Confidence: ${result.confidence || 0}% | Response Time: ${result.response_time || 0}s`
+            })
+          });
+        } catch(e) { console.warn('Audit log failed:', e); }
+        
+      } catch (error) {
+        console.error('Ollama API Error:', error);
+        document.getElementById('decisionSummary').innerHTML = `
+          <div class="text-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Could not connect to Ollama backend.
+            <br><br>
+            <small>Please ensure:</small>
+            <ul class="mt-2 small">
+              <li>Flask backend is running on port 5001</li>
+              <li>Ollama is installed and running (ollama serve)</li>
+              <li>A model is pulled (ollama pull llama2)</li>
+            </ul>
+          </div>
+        `;
+        document.getElementById('sourcesList').innerHTML = '<div class="text-secondary">Unable to connect to document database</div>';
+        
+        chatHistory.push({ 
+          role: 'bot', 
+          content: `<div class="structured-message"><div class="structured-section"><strong>Connection Error:</strong><p>${escapeHtml(error.message)}</p><p class="mt-2 small text-muted">Please check that your Flask backend is running at http://localhost:5001 and Ollama service is active.</p></div></div>`
+        });
+        renderMessages();
+      }
+    }
+    
+    const askBtn = document.getElementById('askBtn');
+    if (askBtn) askBtn.addEventListener('click', handleAsk);
+    
+    const questionInput = document.getElementById('aiQuestion');
+    if (questionInput) questionInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleAsk(); });
+    
+    document.querySelectorAll('.suggest-btn, .suggest').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const q = btn.getAttribute('data-q');
+        if (q && document.getElementById('aiQuestion')) {
+          document.getElementById('aiQuestion').value = q;
+          handleAsk();
+        }
+      });
+    });
+  }
+
+  function setupAdmin() {
+    document.getElementById("addUserBtn")?.addEventListener("click", () => {
+      const name = prompt("Enter email:");
+      if(name){ users.push({ id: users.length+1, name: name, role: "User" }); loadPage("admin"); }
+    });
+    document.querySelectorAll(".delete-user").forEach(btn => {
+      btn.addEventListener("click", () => { users = users.filter(u => u.id !== parseInt(btn.dataset.id)); loadPage("admin"); });
+    });
+  }
+
+  async function loadPage(page) {
+    currentPage = page;
+    if (homeRefreshInterval) clearInterval(homeRefreshInterval);
+    let html = "";
+    if (page === "home") {
+      html = await renderHome();
+      document.getElementById("dynamicPage").innerHTML = html;
+      initHomeChart();
+      attachHomeUploadEvents();
+      homeRefreshInterval = setInterval(async () => { if(currentPage==="home"){ document.getElementById("dynamicPage").innerHTML = await renderHome(); initHomeChart(); attachHomeUploadEvents(); } }, 10000);
+    } else if (page === "folder") {
+      html = await renderFolder();
+      document.getElementById("dynamicPage").innerHTML = html;
+      attachFolderTabEvents();
+    } else if (page === "ai-assistant") {
+      html = renderAIAssistant();
+      document.getElementById("dynamicPage").innerHTML = html;
+      setupAIAssistant();
+    } else if (page === "admin") {
+      html = renderAdmin();
+      document.getElementById("dynamicPage").innerHTML = html;
+      setupAdmin();
+    }
+  }
+
+  document.querySelectorAll(".sidebar-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+      const page = item.getAttribute("data-page");
+      document.querySelectorAll(".sidebar-item").forEach(i => i.classList.remove("active"));
+      item.classList.add("active");
+      loadPage(page);
+    });
+  });
+  
+  loadPage("home");
+</script>
+</body>
+</html>
