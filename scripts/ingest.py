@@ -21,7 +21,7 @@ def ingest_data_to_sqlite(data_root='data', db_name='database.db'):
             filename TEXT,
             category TEXT,
             content TEXT,
-            upload_date TEXT
+            updated_at TEXT
         )
     ''')
     
@@ -41,7 +41,7 @@ def ingest_data_to_sqlite(data_root='data', db_name='database.db'):
                         content = f.read()
                         
                     cursor.execute('''
-                        INSERT INTO documents (filename, category, content, upload_date)
+                        INSERT INTO documents (filename, category, content, updated_at)
                         VALUES (?, ?, ?, ?)
                     ''', (filename, category, content, today))
                     count += 1
